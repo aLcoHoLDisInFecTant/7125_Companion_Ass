@@ -37,6 +37,14 @@ pip install -r requirements.txt
 pip install -e .
 ```
 
+安装完成后可用命令（等价于 `python -m ...`）：
+
+```powershell
+hkbu-eval --help
+hkbu-chat --help
+hkbu-ui --help
+```
+
 ### 2) 放置你的知识库 JSON/JSONL
 
 推荐放在项目的 `data/` 目录下，例如：
@@ -82,6 +90,12 @@ python -m hkbu_study_companion.scripts.run_eval --mode baseline --docs-json "dat
 python -m hkbu_study_companion.scripts.run_eval --mode embed   --docs-json "data\rag_knowledge_base.jsonl" --query "..." --model gemma3:4b
 ```
 
+如果你使用的是“方式 B（pip install -e .）”，也可以直接：
+
+```powershell
+hkbu-eval --docs-json "data\rag_knowledge_base.jsonl" --query "..." --mode all --model gemma3:4b
+```
+
 ### 4) 启动对话 CLI（可交互提问）
 
 ```powershell
@@ -100,6 +114,12 @@ CLI 内置命令：
 - `/clear` 清空对话记忆
 - `/exit` 退出
 
+如果你使用的是“方式 B（pip install -e .）”，也可以直接：
+
+```powershell
+hkbu-chat --model gemma3:4b --docs-json "data\rag_knowledge_base.jsonl" --retriever tfidf
+```
+
 ### 5) 启动简单 UI（Tkinter，本地无额外依赖）
 
 如果你更希望用窗口界面输入问题、查看 token 统计和检索片段，可以启动 Tkinter UI：
@@ -117,6 +137,12 @@ UI 功能：
 - 左侧：对话窗口（User/Assistant）
 - 右侧：本次回答的 token 统计与检索到的上下文片段
 - 顶部：可切换 retriever（baseline/tfidf/embed）与选择 docs 文件
+
+如果你使用的是“方式 B（pip install -e .）”，也可以直接：
+
+```powershell
+hkbu-ui --model gemma3:4b --docs-json "data\rag_knowledge_base.jsonl" --retriever tfidf
+```
 
 ## Notes
 
