@@ -100,6 +100,24 @@ CLI 内置命令：
 - `/clear` 清空对话记忆
 - `/exit` 退出
 
+### 5) 启动简单 UI（Tkinter，本地无额外依赖）
+
+如果你更希望用窗口界面输入问题、查看 token 统计和检索片段，可以启动 Tkinter UI：
+
+```powershell
+cd d:\neuro-like\7125Core\hkbu-study-companion
+$env:PYTHONPATH = "$PWD\src"
+python -m hkbu_study_companion.scripts.ui_tk `
+  --model gemma3:4b `
+  --docs-json "d:\neuro-like\7125Core\hkbu-study-companion\data\rag_knowledge_base.jsonl" `
+  --retriever tfidf
+```
+
+UI 功能：
+- 左侧：对话窗口（User/Assistant）
+- 右侧：本次回答的 token 统计与检索到的上下文片段
+- 顶部：可切换 retriever（baseline/tfidf/embed）与选择 docs 文件
+
 ## Notes
 
 - This project uses only Ollama generate (HTTP `/api/generate` or `ollama.generate` if installed).

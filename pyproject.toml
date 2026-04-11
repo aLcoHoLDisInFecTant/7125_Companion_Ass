@@ -24,3 +24,4 @@ where = ["src"]
 [project.scripts]
 hkbu-eval = "hkbu_study_companion.scripts.run_eval:main"
 hkbu-chat = "hkbu_study_companion.scripts.chat_cli:main"
+hkbu-ui = "hkbu_study_companion.scripts.ui_tk:main"
