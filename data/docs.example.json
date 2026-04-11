@@ -1,0 +1,17 @@
+[
+  {
+    "doc_id": "DOC1",
+    "title": "COMP4146 Course Outline (Summary)",
+    "text": "COMP4146 Data Analytics and Artificial Intelligence is a course focusing on practical and theoretical foundations.\nCore modules include: data preprocessing, exploratory data analysis, classical machine learning, evaluation metrics,\nintroduction to deep learning, and an applied project component emphasizing responsible AI practices.\nAssessment typically includes assignments, quizzes, and a final project.\n"
+  },
+  {
+    "doc_id": "DOC2",
+    "title": "Late Submission Policy",
+    "text": "Late submission policy: zero tolerance without prior approval.\nIf an assignment is submitted after the deadline and no prior approval is granted, the submission is not accepted.\nStudents should request extensions before the deadline with valid reasons and supporting evidence.\n"
+  },
+  {
+    "doc_id": "DOC3",
+    "title": "Academic Integrity & Minimum Implementation Requirements",
+    "text": "Academic integrity: plagiarism and unauthorized collaboration are prohibited.\nYou must cite sources properly and submit your own work.\nMinimum implementation requirements checklist may include: reproducible environment, clear documentation,\nbaseline comparison, evaluation metrics, and ablation or error analysis where applicable.\n"
+  }
+]

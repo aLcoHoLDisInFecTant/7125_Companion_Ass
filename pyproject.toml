@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hkbu-study-companion"
+version = "0.1.0"
+description = "Local HKBU Study Companion (Ollama + hand-rolled RAG)"
+requires-python = ">=3.10"
+dependencies = [
+  "numpy",
+  "requests",
+  "scikit-learn",
+  "sentence-transformers",
+  "torch",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project.scripts]
+hkbu-eval = "hkbu_study_companion.scripts.run_eval:main"
+hkbu-chat = "hkbu_study_companion.scripts.chat_cli:main"
