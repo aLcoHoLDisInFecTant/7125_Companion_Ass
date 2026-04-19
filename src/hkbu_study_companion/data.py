@@ -1,3 +1,10 @@
+"""数据加载模块
+
+该模块负责加载和处理文档数据，包括：
+1. 定义Doc数据类，用于存储文档信息
+2. 从JSON文件加载文档
+3. 提供示例文档数据
+"""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -9,12 +16,37 @@ from pathlib import Path
 
 @dataclass(frozen=True)
 class Doc:
+    """文档数据类
+    
+    用于存储文档的基本信息，包括文档ID、标题和文本内容。
+    
+    Attributes:
+        doc_id: 文档唯一标识符
+        title: 文档标题
+        text: 文档文本内容
+    """
     doc_id: str
     title: str
     text: str
 
 
 def load_docs_from_json(path: str) -> List[Doc]:
+    """从JSON文件加载文档列表
+    
+    支持三种JSON格式：
+    1. 直接是文档对象列表：[{"doc_id": "...", "title": "...", "text": "..."}, ...]
+    2. 包含docs字段的对象：{"docs": [{"doc_id": "...", "title": "...", "text": "..."}, ...]}
+    3. JSONL格式：每行一个JSON对象
+    
+    Args:
+        path: JSON文件路径
+    
+    Returns:
+        加载的文档列表
+    
+    Raises:
+        ValueError: 如果JSON格式不支持
+    """
     p = Path(path)
     raw_text = p.read_text(encoding="utf-8")
     items: Optional[List[dict]] = None
@@ -26,6 +58,7 @@ def load_docs_from_json(path: str) -> List[Doc]:
         elif isinstance(obj, list):
             items = obj
     except json.JSONDecodeError:
+        # 尝试按JSONL格式处理
         lines = [ln for ln in raw_text.splitlines() if ln.strip()]
         items = [json.loads(ln) for ln in lines]
 
@@ -36,6 +69,7 @@ def load_docs_from_json(path: str) -> List[Doc]:
     for i, it in enumerate(items, start=1):
         if not isinstance(it, dict):
             continue
+        # 生成文档ID
         base_id = str(it.get("doc_id") or f"DOC{i}")
         category = it.get("category")
         if isinstance(category, str) and category.strip():
@@ -44,6 +78,7 @@ def load_docs_from_json(path: str) -> List[Doc]:
         else:
             doc_id = base_id
 
+        # 生成文档标题
         source_file = it.get("source_file")
         if it.get("title"):
             title = str(it.get("title"))
@@ -55,6 +90,7 @@ def load_docs_from_json(path: str) -> List[Doc]:
                 parts.append(category.strip())
             title = " | ".join(parts) if parts else doc_id
 
+        # 提取文档文本
         text = str(
             it.get("text")
             or it.get("clean_markdown_content")
@@ -69,6 +105,16 @@ def load_docs_from_json(path: str) -> List[Doc]:
 
 
 def load_hkbu_sample_docs() -> List[Doc]:
+    """加载香港浸会大学的示例文档
+    
+    返回包含三个示例文档的列表：
+    1. COMP4146课程大纲摘要
+    2. 迟交政策
+    3. 学术诚信和最低实施要求
+    
+    Returns:
+        示例文档列表
+    """
     return [
         Doc(
             doc_id="DOC1",
