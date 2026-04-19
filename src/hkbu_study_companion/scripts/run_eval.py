@@ -33,7 +33,7 @@ def main(argv: Optional[List[str]] = None) -> None:
     p = argparse.ArgumentParser()
     p.add_argument("--model", default="qwen3:9b")
     p.add_argument("--base-url", default="http://localhost:11434")
-    p.add_argument("--query", default="COMP4146 的迟交政策是什么？")
+    p.add_argument("--query", default="What is the late submission policy for COMP4146?")
     p.add_argument("--mode", choices=["all", "baseline", "tfidf", "embed"], default="all")
     p.add_argument("--docs-json", default=None)
     p.add_argument("--top-k", type=int, default=4)
