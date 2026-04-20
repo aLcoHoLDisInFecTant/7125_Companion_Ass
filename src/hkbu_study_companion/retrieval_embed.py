@@ -1,6 +1,6 @@
-"""嵌入检索模块
+"""Embedding Retrieval Module
 
-该模块实现了基于句子嵌入的文本检索功能，使用预训练的句子Transformer模型将文本转换为向量，然后通过计算向量相似度来查找相关内容。
+This module implements text retrieval functionality based on sentence embeddings. It uses a pre-trained Sentence Transformer model to convert text into vectors and then finds relevant content by calculating vector similarity.
 """
 from __future__ import annotations
 
@@ -12,15 +12,15 @@ from .chunking import Chunk
 
 
 class EmbeddingRetriever:
-    """嵌入检索器
+    """Embedding Retriever
     
-    使用预训练的句子Transformer模型将文本转换为向量，通过计算查询向量与文档分块向量之间的相似度来排序结果。
+    Uses a pre-trained Sentence Transformer model to convert text into vectors, and sorts results by calculating the similarity between query vectors and document chunk vectors.
     
     Attributes:
-        chunks: 文档分块列表
-        device: 运行设备（"cuda"或"cpu"）
-        model: 句子Transformer模型
-        embeddings: 文档分块的嵌入向量矩阵
+        chunks: List of document chunks.
+        device: Running device ("cuda" or "cpu").
+        model: Sentence Transformer model.
+        embeddings: Embedding vector matrix of document chunks.
     """
     def __init__(
         self,
@@ -28,48 +28,48 @@ class EmbeddingRetriever:
         model_name: str = "sentence-transformers/all-MiniLM-L6-v2",
         device: Optional[str] = None,
     ):
-        """初始化嵌入检索器
+        """Initializes the Embedding Retriever.
         
         Args:
-            chunks: 文档分块列表
-            model_name: 预训练模型名称，默认为"sentence-transformers/all-MiniLM-L6-v2"
-            device: 运行设备，默认为自动检测（优先使用cuda）
+            chunks: List of document chunks.
+            model_name: Pre-trained model name, defaults to "sentence-transformers/all-MiniLM-L6-v2".
+            device: Running device, defaults to automatic detection (prioritizes cuda).
         """
         import torch
         from sentence_transformers import SentenceTransformer
 
         self.chunks = chunks
-        # 自动检测设备
+        # Auto-detect device
         if device is None:
             device = "cuda" if torch.cuda.is_available() else "cpu"
         self.device = device
-        # 加载预训练模型
+        # Load pre-trained model
         self.model = SentenceTransformer(model_name, device=self.device)
 
-        # 计算所有文档分块的嵌入向量
+        # Compute embedding vectors for all document chunks
         texts = [c.text for c in chunks]
         emb = self.model.encode(
             texts,
-            batch_size=64,  # 批处理大小
-            show_progress_bar=True,  # 显示进度条
-            convert_to_numpy=True,  # 转换为numpy数组
-            normalize_embeddings=True,  # 归一化嵌入向量
+            batch_size=64,  # Batch size
+            show_progress_bar=True,  # Show progress bar
+            convert_to_numpy=True,  # Convert to numpy array
+            normalize_embeddings=True,  # Normalize embedding vectors
         )
-        self.embeddings = emb.astype(np.float32)  # 转换为float32以节省内存
+        self.embeddings = emb.astype(np.float32)  # Convert to float32 to save memory
 
     def retrieve(self, query: str, top_k: int) -> List[Dict[str, Any]]:
-        """根据查询检索相关文档分块
+        """Retrieves relevant document chunks based on the query.
         
         Args:
-            query: 查询文本
-            top_k: 返回的top-k结果数
+            query: Query text.
+            top_k: Number of top-k results to return.
         
         Returns:
-            按相关性排序的文档分块列表，每个元素包含rank、chunk_id、doc_id、title、score和text字段
+            A list of document chunks sorted by relevance, each containing rank, chunk_id, doc_id, title, score, and text fields.
         """
         if top_k <= 0:
             return []
-        # 计算查询的嵌入向量
+        # Compute embedding vector for the query
         q = (
             self.model.encode(
                 [query],
@@ -82,23 +82,24 @@ class EmbeddingRetriever:
             .reshape(-1)
         )
 
-        # 计算查询向量与所有文档分块向量的点积（因为向量已归一化，点积等于余弦相似度）
+        # Calculate the dot product between the query vector and all chunk vectors (since vectors are normalized, dot product equals cosine similarity)
         sims = (self.embeddings @ q).flatten()
-        # 获取相似度最高的top-k个分块的索引
+        # Get the indices of the top-k chunks with the highest similarity
         idx = np.argsort(-sims)[:top_k]
 
-        # 构建结果列表
+        # Build the results list
         out: List[Dict[str, Any]] = []
         for rank, i in enumerate(idx, start=1):
             c = self.chunks[int(i)]
             out.append(
                 {
-                    "rank": rank,  # 排名
-                    "chunk_id": c.chunk_id,  # 分块ID
-                    "doc_id": c.doc_id,  # 文档ID
-                    "title": c.title,  # 标题
-                    "score": float(sims[int(i)]),  # 相似度分数
-                    "text": c.text,  # 文本内容
+                    "rank": rank,  # Rank
+                    "chunk_id": c.chunk_id,  # Chunk ID
+                    "doc_id": c.doc_id,  # Document ID
+                    "title": c.title,  # Title
+                    "score": float(sims[int(i)]),  # Similarity score
+                    "text": c.text,  # Text content
                 }
             )
         return out
+

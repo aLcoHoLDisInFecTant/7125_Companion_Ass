@@ -1,10 +1,10 @@
-"""文档分块模块
+"""Document Chunking Module
 
-该模块负责将文档分割成小块，以便于后续的检索和处理。
-主要功能包括：
-1. 定义Chunk数据类，用于存储分块信息
-2. 提供文本分块功能
-3. 提供从文档列表构建分块列表的功能
+This module is responsible for splitting documents into smaller chunks to facilitate subsequent retrieval and processing.
+Main features include:
+1. Defining the `Chunk` data class for storing chunk information.
+2. Providing text chunking functionality.
+3. Providing functionality to build a list of chunks from a list of documents.
 """
 from __future__ import annotations
 
@@ -16,15 +16,15 @@ from .data import Doc
 
 @dataclass(frozen=True)
 class Chunk:
-    """分块数据类
+    """Chunk Data Class
     
-    用于存储文档分块的信息，包括分块ID、文档ID、标题和文本内容。
+    Used to store information for a document chunk, including chunk ID, document ID, title, and text content.
     
     Attributes:
-        chunk_id: 分块唯一标识符
-        doc_id: 所属文档的唯一标识符
-        title: 分块的标题（通常与文档标题相同）
-        text: 分块的文本内容
+        chunk_id: Unique identifier for the chunk.
+        doc_id: Unique identifier for the parent document.
+        title: Title of the chunk (usually the same as the document title).
+        text: Text content of the chunk.
     """
     chunk_id: str
     doc_id: str
@@ -33,20 +33,20 @@ class Chunk:
 
 
 def chunk_text(text: str, chunk_size: int, overlap: int) -> List[str]:
-    """将文本分割成指定大小的块
+    """Splits text into chunks of a specified size.
     
     Args:
-        text: 要分割的文本
-        chunk_size: 每个块的大小（字符数）
-        overlap: 块之间的重叠大小（字符数）
+        text: The text to be split.
+        chunk_size: The size of each chunk (in characters).
+        overlap: The overlap size between chunks (in characters).
     
     Returns:
-        分割后的文本块列表
+        A list of split text chunks.
     
     Raises:
-        ValueError: 如果chunk_size <= 0
-        ValueError: 如果overlap < 0
-        ValueError: 如果overlap >= chunk_size
+        ValueError: If `chunk_size` <= 0.
+        ValueError: If `overlap` < 0.
+        ValueError: If `overlap` >= `chunk_size`.
     """
     text = text.strip()
     if not text:
@@ -70,15 +70,15 @@ def chunk_text(text: str, chunk_size: int, overlap: int) -> List[str]:
 
 
 def build_chunks(docs: List[Doc], chunk_size: int, overlap: int) -> List[Chunk]:
-    """从文档列表构建分块列表
+    """Builds a list of chunks from a list of documents.
     
     Args:
-        docs: 文档列表
-        chunk_size: 每个块的大小（字符数）
-        overlap: 块之间的重叠大小（字符数）
+        docs: List of documents.
+        chunk_size: The size of each chunk (in characters).
+        overlap: The overlap size between chunks (in characters).
     
     Returns:
-        构建的分块列表
+        A list of constructed chunks.
     """
     out: List[Chunk] = []
     for d in docs:
@@ -93,3 +93,4 @@ def build_chunks(docs: List[Doc], chunk_size: int, overlap: int) -> List[Chunk]:
                 )
             )
     return out
+

@@ -1,9 +1,9 @@
-"""Ollama客户端模块
+"""Ollama Client Module
 
-该模块提供了与Ollama API交互的功能，用于生成文本响应。
-主要功能包括：
-1. 调用Ollama的generate API生成文本
-2. 提取生成过程中的token使用统计信息
+This module provides functionality for interacting with the Ollama API to generate text responses.
+Main features include:
+1. Calling Ollama's `generate` API to generate text.
+2. Extracting token usage statistics from the generation process.
 """
 from __future__ import annotations
 
@@ -23,22 +23,22 @@ def generate_raw(
     base_url: str = "http://localhost:11434",
     timeout_s: int = 300,
 ) -> Dict[str, Any]:
-    """调用Ollama API生成文本
+    """Calls the Ollama API to generate text.
     
-    首先尝试使用ollama Python库，如果失败则使用HTTP请求直接调用API。
+    First attempts to use the `ollama` Python library; if that fails, falls back to making direct HTTP requests to the API.
     
     Args:
-        model: 模型名称
-        prompt: 提示文本
-        temperature: 温度参数，控制生成文本的随机性
-        top_p: 顶部p参数，控制生成文本的多样性
-        num_predict: 预测的token数量
-        stream: 是否流式返回结果
-        base_url: Ollama API的基础URL
-        timeout_s: 请求超时时间（秒）
+        model: Model name.
+        prompt: Prompt text.
+        temperature: Temperature parameter, controlling the randomness of generated text.
+        top_p: Top-p parameter, controlling the diversity of generated text.
+        num_predict: Number of tokens to predict.
+        stream: Whether to stream the results.
+        base_url: Base URL of the Ollama API.
+        timeout_s: Request timeout in seconds.
     
     Returns:
-        API返回的响应字典
+        The response dictionary returned by the API.
     """
     try:
         import ollama
@@ -54,7 +54,7 @@ def generate_raw(
             },
         )
     except Exception:
-        # 如果ollama库不可用，使用HTTP请求
+        # If the ollama library is unavailable, use HTTP requests
         url = base_url.rstrip("/") + "/api/generate"
         payload = {
             "model": model,
@@ -72,15 +72,16 @@ def generate_raw(
 
 
 def token_stats(resp: Dict[str, Any]) -> Dict[str, Optional[int]]:
-    """提取token使用统计信息
+    """Extracts token usage statistics.
     
     Args:
-        resp: API返回的响应字典
+        resp: The response dictionary returned by the API.
     
     Returns:
-        包含token统计信息的字典，包括prompt_eval_count和eval_count
+        A dictionary containing token statistics, including `prompt_eval_count` and `eval_count`.
     """
     return {
-        "prompt_eval_count": resp.get("prompt_eval_count"),  # 提示文本的token数量
-        "eval_count": resp.get("eval_count"),  # 生成文本的token数量
+        "prompt_eval_count": resp.get("prompt_eval_count"),  # Number of tokens in the prompt
+        "eval_count": resp.get("eval_count"),  # Number of tokens in the generated text
     }
+

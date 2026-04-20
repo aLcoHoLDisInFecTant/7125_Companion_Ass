@@ -1,9 +1,9 @@
-"""数据加载模块
+"""Data Loading Module
 
-该模块负责加载和处理文档数据，包括：
-1. 定义Doc数据类，用于存储文档信息
-2. 从JSON文件加载文档
-3. 提供示例文档数据
+This module is responsible for loading and processing document data, including:
+1. Defining the `Doc` data class for storing document information.
+2. Loading documents from JSON files.
+3. Providing sample document data.
 """
 from __future__ import annotations
 
@@ -16,14 +16,14 @@ from pathlib import Path
 
 @dataclass(frozen=True)
 class Doc:
-    """文档数据类
+    """Document Data Class
     
-    用于存储文档的基本信息，包括文档ID、标题和文本内容。
+    Used to store basic document information, including document ID, title, and text content.
     
     Attributes:
-        doc_id: 文档唯一标识符
-        title: 文档标题
-        text: 文档文本内容
+        doc_id: Unique identifier for the document.
+        title: Title of the document.
+        text: Text content of the document.
     """
     doc_id: str
     title: str
@@ -31,21 +31,21 @@ class Doc:
 
 
 def load_docs_from_json(path: str) -> List[Doc]:
-    """从JSON文件加载文档列表
+    """Loads a list of documents from a JSON file.
     
-    支持三种JSON格式：
-    1. 直接是文档对象列表：[{"doc_id": "...", "title": "...", "text": "..."}, ...]
-    2. 包含docs字段的对象：{"docs": [{"doc_id": "...", "title": "...", "text": "..."}, ...]}
-    3. JSONL格式：每行一个JSON对象
+    Supports three JSON formats:
+    1. A list of document objects: [{"doc_id": "...", "title": "...", "text": "..."}, ...]
+    2. An object containing a `docs` field: {"docs": [{"doc_id": "...", "title": "...", "text": "..."}, ...]}
+    3. JSONL format: one JSON object per line.
     
     Args:
-        path: JSON文件路径
+        path: Path to the JSON file.
     
     Returns:
-        加载的文档列表
+        A list of loaded documents.
     
     Raises:
-        ValueError: 如果JSON格式不支持
+        ValueError: If the JSON format is unsupported.
     """
     p = Path(path)
     raw_text = p.read_text(encoding="utf-8")
@@ -58,7 +58,7 @@ def load_docs_from_json(path: str) -> List[Doc]:
         elif isinstance(obj, list):
             items = obj
     except json.JSONDecodeError:
-        # 尝试按JSONL格式处理
+        # Attempt to process as JSONL format
         lines = [ln for ln in raw_text.splitlines() if ln.strip()]
         items = [json.loads(ln) for ln in lines]
 
@@ -69,7 +69,7 @@ def load_docs_from_json(path: str) -> List[Doc]:
     for i, it in enumerate(items, start=1):
         if not isinstance(it, dict):
             continue
-        # 生成文档ID
+        # Generate document ID
         base_id = str(it.get("doc_id") or f"DOC{i}")
         category = it.get("category")
         if isinstance(category, str) and category.strip():
@@ -78,7 +78,7 @@ def load_docs_from_json(path: str) -> List[Doc]:
         else:
             doc_id = base_id
 
-        # 生成文档标题
+        # Generate document title
         source_file = it.get("source_file")
         if it.get("title"):
             title = str(it.get("title"))
@@ -90,7 +90,7 @@ def load_docs_from_json(path: str) -> List[Doc]:
                 parts.append(category.strip())
             title = " | ".join(parts) if parts else doc_id
 
-        # 提取文档文本
+        # Extract document text
         text = str(
             it.get("text")
             or it.get("clean_markdown_content")
@@ -105,15 +105,15 @@ def load_docs_from_json(path: str) -> List[Doc]:
 
 
 def load_hkbu_sample_docs() -> List[Doc]:
-    """加载香港浸会大学的示例文档
+    """Loads sample documents from Hong Kong Baptist University (HKBU).
     
-    返回包含三个示例文档的列表：
-    1. COMP4146课程大纲摘要
-    2. 迟交政策
-    3. 学术诚信和最低实施要求
+    Returns a list containing three sample documents:
+    1. COMP4146 Course Outline (Summary)
+    2. Late Submission Policy
+    3. Academic Integrity & Minimum Implementation Requirements
     
     Returns:
-        示例文档列表
+        A list of sample documents.
     """
     return [
         Doc(
@@ -146,3 +146,4 @@ def load_hkbu_sample_docs() -> List[Doc]:
             ),
         ),
     ]
+

@@ -1,6 +1,6 @@
-"""评估脚本
+"""Evaluation Script
 
-该脚本用于评估不同检索方法的性能，包括基线（无RAG）、TF-IDF检索和嵌入检索。
+This script is used to evaluate the performance of different retrieval methods, including baseline (no RAG), TF-IDF retrieval, and embedding retrieval.
 """
 from __future__ import annotations
 
@@ -12,11 +12,11 @@ from ..pipeline import StudyCompanion
 
 
 def _print_case(name: str, result: Dict[str, Any]) -> None:
-    """打印评估结果
+    """Prints evaluation results.
     
     Args:
-        name: 评估方法名称
-        result: 评估结果字典
+        name: The name of the evaluation method.
+        result: A dictionary containing evaluation results.
     """
     print("=" * 90)
     print(f"[{name}]")
@@ -40,31 +40,32 @@ def _print_case(name: str, result: Dict[str, Any]) -> None:
 
 
 def main(argv: Optional[List[str]] = None) -> None:
-    """主函数
+    """Main function.
     
     Args:
-        argv: 命令行参数
+        argv: Command line arguments.
     """
-    # 解析命令行参数
+    # Parse command line arguments
     p = argparse.ArgumentParser()
-    p.add_argument("--model", default="qwen3:9b", help="模型名称")
-    p.add_argument("--base-url", default="http://localhost:11434", help="Ollama API的基础URL")
-    p.add_argument("--query", default="COMP4146 的迟交政策是什么？", help="测试查询")
-    p.add_argument("--mode", choices=["all", "baseline", "tfidf", "embed"], default="all", help="评估模式")
-    p.add_argument("--docs-json", default=None, help="JSON文档文件路径")
-    p.add_argument("--top-k", type=int, default=4, help="检索时返回的top-k结果数")
-    p.add_argument("--chunk-size", type=int, default=220, help="文档分块的大小")
-    p.add_argument("--chunk-overlap", type=int, default=50, help="文档分块之间的重叠大小")
-    p.add_argument("--temperature", type=float, default=0.2, help="温度参数")
-    p.add_argument("--top-p", type=float, default=0.9, help="顶部p参数")
-    p.add_argument("--num-predict", type=int, default=220, help="预测的token数量")
-    p.add_argument("--embed-model", default="sentence-transformers/all-MiniLM-L6-v2", help="嵌入模型名称")
+
+    p.add_argument("--model", default="qwen3:9b")
+    p.add_argument("--base-url", default="http://localhost:11434")
+    p.add_argument("--query", default="What is the late submission policy for COMP4146?")
+    p.add_argument("--mode", choices=["all", "baseline", "tfidf", "embed"], default="all")
+    p.add_argument("--docs-json", default=None)
+    p.add_argument("--top-k", type=int, default=4)
+    p.add_argument("--chunk-size", type=int, default=220)
+    p.add_argument("--chunk-overlap", type=int, default=50)
+    p.add_argument("--temperature", type=float, default=0.2)
+    p.add_argument("--top-p", type=float, default=0.9)
+    p.add_argument("--num-predict", type=int, default=220)
+    p.add_argument("--embed-model", default="sentence-transformers/all-MiniLM-L6-v2")
     args = p.parse_args(argv)
 
-    # 加载文档
+    # Load documents
     docs = load_docs_from_json(args.docs_json) if args.docs_json else load_hkbu_sample_docs()
 
-    # 创建StudyCompanion实例的函数
+    # Function to create a StudyCompanion instance
     def make_companion() -> StudyCompanion:
         return StudyCompanion(
             docs=docs,
@@ -78,17 +79,17 @@ def main(argv: Optional[List[str]] = None) -> None:
             num_predict=args.num_predict,
         )
 
-    # 运行基线评估（无RAG）
+    # Run baseline evaluation (No RAG)
     if args.mode in ("all", "baseline"):
         baseline = make_companion().answer_baseline(args.query)
         _print_case("Baseline (No RAG)", baseline)
 
-    # 运行TF-IDF检索评估
+    # Run TF-IDF retrieval evaluation
     if args.mode in ("all", "tfidf"):
         lexical = make_companion().answer_tfidf(args.query, top_k=args.top_k)
         _print_case("Lexical RAG (TF-IDF)", lexical)
 
-    # 运行嵌入检索评估
+    # Run embedding retrieval evaluation
     if args.mode in ("all", "embed"):
         neu_companion = make_companion()
         try:
@@ -106,3 +107,4 @@ def main(argv: Optional[List[str]] = None) -> None:
 
 if __name__ == "__main__":
     main()
+
