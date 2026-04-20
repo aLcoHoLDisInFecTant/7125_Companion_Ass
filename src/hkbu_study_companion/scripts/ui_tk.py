@@ -52,9 +52,12 @@ class App(tk.Tk):
             safety_mode=self.state.safety_mode,
             reasoning_nudge=self.state.reasoning_nudge,
         )
+        self._active_docs_json = self.state.docs_json
+        self._active_signature = None
         self.is_generating = False
 
         self._build_ui()
+        self._active_signature = self._current_param_signature()
         self._update_memory_status()
 
     def _build_ui(self) -> None:
@@ -229,6 +232,20 @@ class App(tk.Tk):
             return fallback
         return parsed
 
+    def _current_param_signature(self) -> tuple:
+        return (
+            self.docs_var.get().strip() or None,
+            self.model_var.get().strip() or self.state.model,
+            self.temperature_var.get().strip(),
+            self.top_p_var.get().strip(),
+            self.num_predict_var.get().strip(),
+            self.top_k_var.get().strip(),
+            self.mem_pairs_var.get().strip(),
+            self.ctx_chars_var.get().strip(),
+            bool(self.safety_var.get()),
+            bool(self.reasoning_var.get()),
+        )
+
     def _apply_params(self, reset_memory: bool = False) -> None:
         docs_json = self.docs_var.get().strip() or None
         model = self.model_var.get().strip() or self.state.model
@@ -239,6 +256,14 @@ class App(tk.Tk):
         memory_turns = self._safe_int(self.mem_pairs_var.get(), self.companion.memory_turns, 1)
         max_ctx_chars = self._safe_int(self.ctx_chars_var.get(), self.companion.max_ctx_chars, 80)
         previous_turns = [] if reset_memory else list(self.companion.memory.turns)
+
+        # Reflect normalized values back to the UI so users can see the real applied values.
+        self.temperature_var.set(f"{temperature:.2f}")
+        self.top_p_var.set(f"{top_p:.2f}")
+        self.num_predict_var.set(str(num_predict))
+        self.top_k_var.set(str(top_k))
+        self.mem_pairs_var.set(str(memory_turns))
+        self.ctx_chars_var.set(str(max_ctx_chars))
 
         self.companion = StudyCompanion(
             docs_json=docs_json,
@@ -255,6 +280,8 @@ class App(tk.Tk):
             safety_mode=bool(self.safety_var.get()),
             reasoning_nudge=bool(self.reasoning_var.get()),
         )
+        self._active_docs_json = docs_json
+        self._active_signature = self._current_param_signature()
         if previous_turns:
             self.companion.memory.turns = previous_turns[-(memory_turns * 2) :]
         self._update_memory_status()
@@ -278,6 +305,8 @@ class App(tk.Tk):
         if self.is_generating:
             self._set_status("Still generating previous answer, please wait...")
             return
+        if self._current_param_signature() != self._active_signature:
+            self._apply_params(reset_memory=False)
         q = self.input_var.get().strip()
         if not q:
             return
@@ -307,6 +336,14 @@ class App(tk.Tk):
                 retrieved = res.get("retrieved") or []
                 prompt_txt = str(res.get("prompt", "")).strip()
                 side_lines = []
+                side_lines.append(
+                    "engine_params: "
+                    f"temp={self.companion.temperature:.2f}, top_p={self.companion.top_p:.2f}, "
+                    f"num_predict={self.companion.num_predict}, top_k={self.companion.top_k}, "
+                    f"mem_pairs={self.companion.memory_turns}, ctx_chars={self.companion.max_ctx_chars}, "
+                    f"safety={self.companion.safety_mode}, reasoning={self.companion.reasoning_nudge}"
+                )
+                side_lines.append("")
                 side_lines.append(f"token_stats: {stats}")
                 side_lines.append("")
                 side_lines.append("retrieved:")
