@@ -133,9 +133,13 @@ python -m hkbu_study_companion.scripts.ui_tk `
 
 GUI features:
 
-- Left panel: conversation
-- Right panel: token stats and retrieved context snippets
-- Top bar: retriever selection and docs file selector
+- Auto-discovered model dropdown (with `Refresh Models` button)
+- Placeholder and disabled model control when no model is available
+- Left panel: multi-turn conversation
+- Right panel: token stats, retrieved snippets, and last prompt (debug view)
+- Top controls: retriever, docs selector, generation/retrieval parameters
+- Advanced controls: `safety_mode`, `reasoning_nudge`, and `embed_model`
+- Utility buttons: `Clear chat + memory`, `Reload docs + reset`, `Apply params to engine`
 
 If installed with Option B:
 
@@ -147,6 +151,15 @@ hkbu-ui --model gemma3:4b --docs-json "data\rag_knowledge_base.jsonl" --retrieve
 
 - Uses only Ollama generate API (`/api/generate`) or `ollama.generate`
 - Embedding retrieval uses `sentence-transformers` and can use CUDA when available (`torch.cuda.is_available()`)
+- Conversation memory keeps pending turns correctly and trims by `mem_pairs`
+- Empty model responses are guarded with a non-empty fallback message
+
+## Troubleshooting
+
+- If the answer says context is insufficient, check whether your query matches the loaded docs topic.
+- `top_k` returns candidates, but candidates may still be semantically irrelevant.
+- If no model is listed, start Ollama and pull a model, then click `Refresh Models`.
+- If model output is unstable, retry once, switch model, or reduce `top_k`/`ctx_chars`.
 
 ### Windows embedding note (symlink)
 
