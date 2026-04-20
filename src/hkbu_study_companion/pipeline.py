@@ -100,6 +100,18 @@ class StudyCompanion:
             base_url=self.base_url,
         )
         answer = str(resp.get("response", "")).strip()
+        if not answer:
+            # Guard against occasional empty model outputs so UI/CLI never shows a blank answer.
+            if has_context:
+                answer = (
+                    "I could not generate a complete answer from the current context. "
+                    "Please try again, reduce top_k/ctx_chars, or switch to another model."
+                )
+            else:
+                answer = (
+                    "I could not generate a complete answer for this request. "
+                    "Please try again or switch to another model."
+                )
         self.memory.add_user(user_query)
         self.memory.add_assistant(answer)
         return {

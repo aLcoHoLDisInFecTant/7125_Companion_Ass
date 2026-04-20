@@ -196,7 +196,14 @@ class App(tk.Tk):
         if models:
             self.available_models = models
             self.model_combo.configure(values=models, state="readonly")
-            if (not prev_model) or reset_selection or (prev_model not in models):
+            # Keep the current model whenever possible to avoid silent model switches.
+            if prev_model and prev_model in models:
+                self.model_var.set(prev_model)
+            elif self.state.model and self.state.model in models:
+                self.model_var.set(self.state.model)
+            elif reset_selection or (not prev_model):
+                self.model_var.set(models[0])
+            elif prev_model not in models:
                 self.model_var.set(models[0])
         else:
             self.available_models = []

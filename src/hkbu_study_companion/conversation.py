@@ -26,7 +26,9 @@ class ConversationBuffer:
                 cur = []
         if len(pairs) > self.max_turns:
             pairs = pairs[-self.max_turns :]
-        self.turns = [x for pair in pairs for x in pair]
+        # Keep complete pairs within max_turns and preserve any pending single turn.
+        # Without this, add_user() immediately drops the just-added message.
+        self.turns = [x for pair in pairs for x in pair] + cur
 
     def format_for_prompt(self) -> str:
         if not self.turns:
