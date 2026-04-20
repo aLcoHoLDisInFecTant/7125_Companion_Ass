@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 from typing import Any, Dict, List, Optional
 
-from ..data import load_docs_from_json, load_hkbu_sample_docs
+from ..data import load_docs, load_hkbu_sample_docs
 from ..pipeline import StudyCompanion
 
 
@@ -35,7 +35,11 @@ def main(argv: Optional[List[str]] = None) -> None:
     p.add_argument("--base-url", default="http://localhost:11434")
     p.add_argument("--query", default="What is the late submission policy for COMP4146?")
     p.add_argument("--mode", choices=["all", "baseline", "tfidf", "embed"], default="all")
-    p.add_argument("--docs-json", default=None)
+    p.add_argument(
+        "--docs-json",
+        default=None,
+        help="Context file path (.json/.jsonl/.txt/.md/.pdf/.docx)",
+    )
     p.add_argument("--top-k", type=int, default=4)
     p.add_argument("--chunk-size", type=int, default=220)
     p.add_argument("--chunk-overlap", type=int, default=50)
@@ -45,7 +49,7 @@ def main(argv: Optional[List[str]] = None) -> None:
     p.add_argument("--embed-model", default="sentence-transformers/all-MiniLM-L6-v2")
     args = p.parse_args(argv)
 
-    docs = load_docs_from_json(args.docs_json) if args.docs_json else load_hkbu_sample_docs()
+    docs = load_docs(args.docs_json) if args.docs_json else load_hkbu_sample_docs()
 
     def make_companion() -> StudyCompanion:
         return StudyCompanion(

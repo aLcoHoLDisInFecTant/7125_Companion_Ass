@@ -11,7 +11,11 @@ def main(argv: Optional[List[str]] = None) -> None:
     p.add_argument("--model", default="qwen3:9b")
     p.add_argument("--base-url", default="http://localhost:11434")
     p.add_argument("--retriever", choices=["baseline", "tfidf", "embed"], default="tfidf")
-    p.add_argument("--docs-json", default=None)
+    p.add_argument(
+        "--docs-json",
+        default=None,
+        help="Context file path (.json/.jsonl/.txt/.md/.pdf/.docx)",
+    )
     p.add_argument("--top-k", type=int, default=4)
     p.add_argument("--chunk-size", type=int, default=220)
     p.add_argument("--chunk-overlap", type=int, default=50)

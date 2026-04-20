@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import threading
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Optional
 
 import tkinter as tk
@@ -176,11 +177,21 @@ class App(tk.Tk):
 
     def _browse_docs(self) -> None:
         path = filedialog.askopenfilename(
-            title="Select JSON/JSONL",
-            filetypes=[("JSON/JSONL", "*.json *.jsonl"), ("All files", "*.*")],
+            title="Select Context File",
+            filetypes=[
+                ("Supported Context Files", "*.json *.jsonl *.txt *.md *.pdf *.docx"),
+                ("JSON/JSONL", "*.json *.jsonl"),
+                ("Text/Markdown", "*.txt *.md"),
+                ("PDF", "*.pdf"),
+                ("Word (.docx)", "*.docx"),
+                ("All files", "*.*"),
+            ],
         )
         if path:
             self.docs_var.set(path)
+            # Apply selected knowledge base immediately so users do not need an extra manual reload.
+            self._reload()
+            self._set_status(f"Loaded docs: {Path(path).name}")
 
     def _on_refresh_models(self) -> None:
         self._refresh_models(reset_selection=False)
@@ -357,7 +368,11 @@ def main(argv: Optional[list[str]] = None) -> None:
     p = argparse.ArgumentParser()
     p.add_argument("--model", default="gemma3:4b")
     p.add_argument("--base-url", default="http://localhost:11434")
-    p.add_argument("--docs-json", default=None)
+    p.add_argument(
+        "--docs-json",
+        default=None,
+        help="Context file path (.json/.jsonl/.txt/.md/.pdf/.docx)",
+    )
     p.add_argument("--retriever", choices=["baseline", "tfidf", "embed"], default="tfidf")
     p.add_argument("--top-k", type=int, default=4)
     p.add_argument("--chunk-size", type=int, default=220)

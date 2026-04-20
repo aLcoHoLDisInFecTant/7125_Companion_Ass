@@ -3,3 +3,5 @@ requests
 scikit-learn
 sentence-transformers
 torch
+pypdf
+python-docx

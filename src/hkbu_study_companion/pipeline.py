@@ -15,7 +15,7 @@ from .config import (
     DEFAULT_TOP_P,
 )
 from .conversation import ConversationBuffer
-from .data import Doc, load_docs_from_json, load_hkbu_sample_docs
+from .data import Doc, load_docs, load_hkbu_sample_docs
 from .ollama_client import generate_raw, token_stats
 from .prompting import build_prompt, detect_plan_intent, format_retrieved_context
 from .retrieval_tfidf import TfidfRetriever
@@ -55,7 +55,7 @@ class StudyCompanion:
         if docs is not None:
             self.docs = docs
         elif docs_json:
-            self.docs = load_docs_from_json(docs_json)
+            self.docs = load_docs(docs_json)
         else:
             self.docs = load_hkbu_sample_docs()
         self.chunks: List[Chunk] = build_chunks(

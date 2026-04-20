@@ -45,12 +45,15 @@ hkbu-chat --help
 hkbu-ui --help
 ```
 
-## 2) Prepare Knowledge Base Files (JSON/JSONL)
+## 2) Prepare Knowledge Base Files
 
 Put your docs under `data/`, for example:
 
 - `data/docs.example.json` (sample JSON array)
 - `data/rag_knowledge_base.jsonl` (your JSONL knowledge base)
+- `data/notes.txt` (plain text)
+- `data/handbook.pdf` (PDF)
+- `data/policies.docx` (Word .docx)
 
 Supported formats:
 
@@ -64,12 +67,20 @@ Supported formats:
   ```json
   {"doc_id":"DOC1","source_file":"x.pdf","category":"Preamble","clean_markdown_content":"...","summary":"..."}
   ```
+- Plain text / markdown: `.txt`, `.md` (loaded as a single document)
+- PDF: `.pdf` (all pages are extracted and merged)
+- Word: `.docx` (paragraphs are extracted and merged)
+
+CLI/UI parameter note:
+
+- The argument name is still `--docs-json` for backward compatibility, but it now accepts `.json/.jsonl/.txt/.md/.pdf/.docx`.
 
 Field mapping:
 
 - `text` is preferred
 - fallback order: `clean_markdown_content` -> `content` -> `summary`
 - if `title` is missing, it is auto-composed from `source_file | category`
+- `.doc` (legacy Word) is not directly supported; convert to `.docx` first
 
 ## 3) Run Evaluation (Baseline vs Lexical RAG vs Neural RAG)
 
@@ -140,6 +151,7 @@ GUI features:
 - Top controls: retriever, docs selector, generation/retrieval parameters
 - Advanced controls: `safety_mode`, `reasoning_nudge`, and `embed_model`
 - Utility buttons: `Clear chat + memory`, `Reload docs + reset`, `Apply params to engine`
+- Selecting a docs file via `Browse` now reloads docs immediately (no extra manual reload needed)
 
 If installed with Option B:
 

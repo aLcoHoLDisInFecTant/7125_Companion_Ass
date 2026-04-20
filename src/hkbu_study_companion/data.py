@@ -14,6 +14,12 @@ class Doc:
     text: str
 
 
+def _sanitize_doc_id(raw: str) -> str:
+    out = "".join(ch if ch.isalnum() else "_" for ch in raw)
+    out = out.strip("_")
+    return out or "DOC"
+
+
 def load_docs_from_json(path: str) -> List[Doc]:
     p = Path(path)
     raw_text = p.read_text(encoding="utf-8")
@@ -66,6 +72,83 @@ def load_docs_from_json(path: str) -> List[Doc]:
             continue
         out.append(Doc(doc_id=doc_id, title=title, text=text))
     return out
+
+
+def _load_doc_from_plain_text(path: str) -> List[Doc]:
+    p = Path(path)
+    text = p.read_text(encoding="utf-8", errors="ignore").strip()
+    if not text:
+        return []
+    doc_id = _sanitize_doc_id(p.stem)
+    return [Doc(doc_id=doc_id, title=p.name, text=text)]
+
+
+def _load_doc_from_pdf(path: str) -> List[Doc]:
+    p = Path(path)
+    try:
+        from pypdf import PdfReader
+    except Exception as e:
+        raise RuntimeError(
+            "PDF support requires package 'pypdf'. Please install dependencies again."
+        ) from e
+
+    reader = PdfReader(str(p))
+    parts: List[str] = []
+    for pg in reader.pages:
+        try:
+            t = pg.extract_text() or ""
+        except Exception:
+            t = ""
+        t = t.strip()
+        if t:
+            parts.append(t)
+    text = "\n\n".join(parts).strip()
+    if not text:
+        return []
+    doc_id = _sanitize_doc_id(p.stem)
+    return [Doc(doc_id=doc_id, title=p.name, text=text)]
+
+
+def _load_doc_from_docx(path: str) -> List[Doc]:
+    p = Path(path)
+    try:
+        from docx import Document
+    except Exception as e:
+        raise RuntimeError(
+            "DOCX support requires package 'python-docx'. Please install dependencies again."
+        ) from e
+
+    doc = Document(str(p))
+    parts: List[str] = []
+    for para in doc.paragraphs:
+        t = (para.text or "").strip()
+        if t:
+            parts.append(t)
+    text = "\n".join(parts).strip()
+    if not text:
+        return []
+    doc_id = _sanitize_doc_id(p.stem)
+    return [Doc(doc_id=doc_id, title=p.name, text=text)]
+
+
+def load_docs(path: str) -> List[Doc]:
+    p = Path(path)
+    ext = p.suffix.lower()
+    if ext in (".json", ".jsonl"):
+        return load_docs_from_json(path)
+    if ext in (".txt", ".md"):
+        return _load_doc_from_plain_text(path)
+    if ext == ".pdf":
+        return _load_doc_from_pdf(path)
+    if ext == ".docx":
+        return _load_doc_from_docx(path)
+    if ext == ".doc":
+        raise ValueError(
+            "Legacy .doc is not supported directly. Please convert to .docx and retry."
+        )
+    raise ValueError(
+        "Unsupported file format. Supported: .json, .jsonl, .txt, .md, .pdf, .docx"
+    )
 
 
 def load_hkbu_sample_docs() -> List[Doc]:
