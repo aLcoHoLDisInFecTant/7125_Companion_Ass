@@ -36,6 +36,9 @@ class StudyCompanion:
         temperature: float = DEFAULT_TEMPERATURE,
         top_p: float = DEFAULT_TOP_P,
         num_predict: int = DEFAULT_NUM_PREDICT,
+        ctx_chars_each: int = 420,
+        safety_mode: bool = False,
+        reasoning_nudge: bool = False,
     ):
         self.model = model
         self.base_url = base_url
@@ -45,6 +48,9 @@ class StudyCompanion:
         self.temperature = temperature
         self.top_p = top_p
         self.num_predict = num_predict
+        self.ctx_chars_each = ctx_chars_each
+        self.safety_mode = safety_mode
+        self.reasoning_nudge = reasoning_nudge
 
         if docs is not None:
             self.docs = docs
@@ -74,10 +80,15 @@ class StudyCompanion:
         want_plan = detect_plan_intent(user_query)
         prompt = build_prompt(
             user_query=user_query,
-            retrieved_context=format_retrieved_context(retrieved),
+            retrieved_context=format_retrieved_context(
+                retrieved,
+                max_chars_each=self.ctx_chars_each,
+            ),
             conversation_history=self.memory.format_for_prompt(),
             want_plan=want_plan,
             has_context=has_context,
+            safety_mode=self.safety_mode,
+            reasoning_nudge=self.reasoning_nudge,
         )
         resp = generate_raw(
             model=self.model,
