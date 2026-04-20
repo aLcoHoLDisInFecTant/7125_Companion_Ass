@@ -1,7 +1,3 @@
-"""Evaluation Script
-
-This script is used to evaluate the performance of different retrieval methods, including baseline (no RAG), TF-IDF retrieval, and embedding retrieval.
-"""
 from __future__ import annotations
 
 import argparse
@@ -11,13 +7,29 @@ from ..data import load_docs_from_json, load_hkbu_sample_docs
 from ..pipeline import StudyCompanion
 
 
+def _tok_total(case: Dict[str, Any]) -> int:
+    stats = case.get("token_stats") or {}
+    p = int(stats.get("prompt_eval_count") or 0)
+    e = int(stats.get("eval_count") or 0)
+    return p + e
+
+
+def _print_token_comparison(cases: Dict[str, Dict[str, Any]]) -> None:
+    if len(cases) < 2:
+        return
+    print("=" * 90)
+    print("[Token Usage Comparison]")
+    for name, result in cases.items():
+        print(f"- {name}: total_tokens={_tok_total(result)}")
+    base = cases.get("Baseline (No RAG)")
+    rag = cases.get("Lexical RAG (TF-IDF)")
+    if base and rag:
+        delta = _tok_total(rag) - _tok_total(base)
+        ratio = (_tok_total(rag) / max(1, _tok_total(base))) if _tok_total(base) else 0.0
+        print(f"- TF-IDF vs Baseline: delta={delta:+d} tokens, ratio={ratio:.3f}x")
+
+
 def _print_case(name: str, result: Dict[str, Any]) -> None:
-    """Prints evaluation results.
-    
-    Args:
-        name: The name of the evaluation method.
-        result: A dictionary containing evaluation results.
-    """
     print("=" * 90)
     print(f"[{name}]")
     print("- Token stats:", result.get("token_stats"))
@@ -40,32 +52,28 @@ def _print_case(name: str, result: Dict[str, Any]) -> None:
 
 
 def main(argv: Optional[List[str]] = None) -> None:
-    """Main function.
-    
-    Args:
-        argv: Command line arguments.
-    """
-    # Parse command line arguments
     p = argparse.ArgumentParser()
-
     p.add_argument("--model", default="qwen3:9b")
     p.add_argument("--base-url", default="http://localhost:11434")
     p.add_argument("--query", default="What is the late submission policy for COMP4146?")
     p.add_argument("--mode", choices=["all", "baseline", "tfidf", "embed"], default="all")
     p.add_argument("--docs-json", default=None)
     p.add_argument("--top-k", type=int, default=4)
+    p.add_argument("--memory-turns", type=int, default=4)
+    p.add_argument("--max-ctx-chars", type=int, default=420)
     p.add_argument("--chunk-size", type=int, default=220)
     p.add_argument("--chunk-overlap", type=int, default=50)
     p.add_argument("--temperature", type=float, default=0.2)
     p.add_argument("--top-p", type=float, default=0.9)
     p.add_argument("--num-predict", type=int, default=220)
+    p.add_argument("--safety-mode", action="store_true")
+    p.add_argument("--reasoning-nudge", action="store_true")
     p.add_argument("--embed-model", default="sentence-transformers/all-MiniLM-L6-v2")
     args = p.parse_args(argv)
 
-    # Load documents
     docs = load_docs_from_json(args.docs_json) if args.docs_json else load_hkbu_sample_docs()
+    cases: Dict[str, Dict[str, Any]] = {}
 
-    # Function to create a StudyCompanion instance
     def make_companion() -> StudyCompanion:
         return StudyCompanion(
             docs=docs,
@@ -74,27 +82,34 @@ def main(argv: Optional[List[str]] = None) -> None:
             chunk_size=args.chunk_size,
             chunk_overlap=args.chunk_overlap,
             top_k=args.top_k,
+            memory_turns=args.memory_turns,
+            max_ctx_chars=args.max_ctx_chars,
             temperature=args.temperature,
             top_p=args.top_p,
             num_predict=args.num_predict,
+            safety_mode=args.safety_mode,
+            reasoning_nudge=args.reasoning_nudge,
         )
 
-    # Run baseline evaluation (No RAG)
     if args.mode in ("all", "baseline"):
         baseline = make_companion().answer_baseline(args.query)
-        _print_case("Baseline (No RAG)", baseline)
+        name = "Baseline (No RAG)"
+        cases[name] = baseline
+        _print_case(name, baseline)
 
-    # Run TF-IDF retrieval evaluation
     if args.mode in ("all", "tfidf"):
         lexical = make_companion().answer_tfidf(args.query, top_k=args.top_k)
-        _print_case("Lexical RAG (TF-IDF)", lexical)
+        name = "Lexical RAG (TF-IDF)"
+        cases[name] = lexical
+        _print_case(name, lexical)
 
-    # Run embedding retrieval evaluation
     if args.mode in ("all", "embed"):
         neu_companion = make_companion()
         try:
             neural = neu_companion.answer_embed(args.query, top_k=args.top_k, embed_model=args.embed_model)
-            _print_case("Neural RAG (Embedding)", neural)
+            name = "Neural RAG (Embedding)"
+            cases[name] = neural
+            _print_case(name, neural)
         except Exception as e:
             print("=" * 90)
             print("[Neural RAG (Embedding) FAILED]")
@@ -104,7 +119,8 @@ def main(argv: Optional[List[str]] = None) -> None:
                 "or pre-download the embedding model and point --embed-model to a local path."
             )
 
+    _print_token_comparison(cases)
+
 
 if __name__ == "__main__":
     main()
-

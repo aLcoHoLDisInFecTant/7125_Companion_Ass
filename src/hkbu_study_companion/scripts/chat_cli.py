@@ -13,11 +13,15 @@ def main(argv: Optional[List[str]] = None) -> None:
     p.add_argument("--retriever", choices=["baseline", "tfidf", "embed"], default="tfidf")
     p.add_argument("--docs-json", default=None)
     p.add_argument("--top-k", type=int, default=4)
+    p.add_argument("--memory-turns", type=int, default=4)
+    p.add_argument("--max-ctx-chars", type=int, default=420)
     p.add_argument("--chunk-size", type=int, default=220)
     p.add_argument("--chunk-overlap", type=int, default=50)
     p.add_argument("--temperature", type=float, default=0.2)
     p.add_argument("--top-p", type=float, default=0.9)
     p.add_argument("--num-predict", type=int, default=220)
+    p.add_argument("--safety-mode", action="store_true")
+    p.add_argument("--reasoning-nudge", action="store_true")
     p.add_argument("--embed-model", default="sentence-transformers/all-MiniLM-L6-v2")
     args = p.parse_args(argv)
 
@@ -28,9 +32,13 @@ def main(argv: Optional[List[str]] = None) -> None:
         chunk_size=args.chunk_size,
         chunk_overlap=args.chunk_overlap,
         top_k=args.top_k,
+        memory_turns=args.memory_turns,
+        max_ctx_chars=args.max_ctx_chars,
         temperature=args.temperature,
         top_p=args.top_p,
         num_predict=args.num_predict,
+        safety_mode=args.safety_mode,
+        reasoning_nudge=args.reasoning_nudge,
     )
 
     mode = args.retriever
