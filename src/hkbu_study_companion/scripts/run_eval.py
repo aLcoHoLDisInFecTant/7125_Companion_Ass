@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import argparse
+import json
+import re
 from typing import Any, Dict, List, Optional
 
 from ..data import load_docs_from_json, load_hkbu_sample_docs
@@ -12,6 +14,26 @@ def _tok_total(case: Dict[str, Any]) -> int:
     p = int(stats.get("prompt_eval_count") or 0)
     e = int(stats.get("eval_count") or 0)
     return p + e
+
+
+def _quality_proxy(case: Dict[str, Any]) -> Dict[str, Any]:
+    answer = str(case.get("answer") or "").strip()
+    citation_count = len(re.findall(r"\[C\d+\]", answer))
+    answer_len = len(answer)
+    lower = answer.lower()
+    uncertainty_markers = [
+        "uncertain",
+        "not found",
+        "insufficient",
+        "not enough context",
+        "unknown",
+    ]
+    uncertainty_flag = any(m in lower for m in uncertainty_markers)
+    return {
+        "answer_len": answer_len,
+        "citation_count": citation_count,
+        "uncertainty_flag": uncertainty_flag,
+    }
 
 
 def _print_token_comparison(cases: Dict[str, Dict[str, Any]]) -> None:
@@ -29,10 +51,24 @@ def _print_token_comparison(cases: Dict[str, Dict[str, Any]]) -> None:
         print(f"- TF-IDF vs Baseline: delta={delta:+d} tokens, ratio={ratio:.3f}x")
 
 
+def _print_quality_comparison(cases: Dict[str, Dict[str, Any]]) -> None:
+    if len(cases) < 2:
+        return
+    print("=" * 90)
+    print("[Quality Proxy Comparison]")
+    for name, result in cases.items():
+        qp = _quality_proxy(result)
+        print(
+            f"- {name}: answer_len={qp['answer_len']}, "
+            f"citations={qp['citation_count']}, uncertainty={qp['uncertainty_flag']}"
+        )
+
+
 def _print_case(name: str, result: Dict[str, Any]) -> None:
     print("=" * 90)
     print(f"[{name}]")
     print("- Token stats:", result.get("token_stats"))
+    print("- Quality proxy:", _quality_proxy(result))
     print("- Answer:\n", result.get("answer", ""))
     print("\n- Retrieved Context:")
     retrieved: List[Dict[str, Any]] = result.get("retrieved") or []
@@ -58,6 +94,7 @@ def main(argv: Optional[List[str]] = None) -> None:
     p.add_argument("--query", default="What is the late submission policy for COMP4146?")
     p.add_argument("--mode", choices=["all", "baseline", "tfidf", "embed"], default="all")
     p.add_argument("--docs-json", default=None)
+    p.add_argument("--queries-json", default=None)
     p.add_argument("--top-k", type=int, default=4)
     p.add_argument("--memory-turns", type=int, default=4)
     p.add_argument("--max-ctx-chars", type=int, default=420)
@@ -72,7 +109,6 @@ def main(argv: Optional[List[str]] = None) -> None:
     args = p.parse_args(argv)
 
     docs = load_docs_from_json(args.docs_json) if args.docs_json else load_hkbu_sample_docs()
-    cases: Dict[str, Dict[str, Any]] = {}
 
     def make_companion() -> StudyCompanion:
         return StudyCompanion(
@@ -91,35 +127,51 @@ def main(argv: Optional[List[str]] = None) -> None:
             reasoning_nudge=args.reasoning_nudge,
         )
 
-    if args.mode in ("all", "baseline"):
-        baseline = make_companion().answer_baseline(args.query)
-        name = "Baseline (No RAG)"
-        cases[name] = baseline
-        _print_case(name, baseline)
+    queries: List[str] = [args.query]
+    if args.queries_json:
+        with open(args.queries_json, "r", encoding="utf-8") as f:
+            raw = json.load(f)
+        if not isinstance(raw, list) or not raw:
+            raise ValueError("--queries-json must be a non-empty JSON list of query strings.")
+        queries = [str(x).strip() for x in raw if str(x).strip()]
+        if not queries:
+            raise ValueError("--queries-json provided but no valid query strings found.")
 
-    if args.mode in ("all", "tfidf"):
-        lexical = make_companion().answer_tfidf(args.query, top_k=args.top_k)
-        name = "Lexical RAG (TF-IDF)"
-        cases[name] = lexical
-        _print_case(name, lexical)
+    for idx, query in enumerate(queries, start=1):
+        print("#" * 90)
+        print(f"[Query {idx}] {query}")
+        cases: Dict[str, Dict[str, Any]] = {}
 
-    if args.mode in ("all", "embed"):
-        neu_companion = make_companion()
-        try:
-            neural = neu_companion.answer_embed(args.query, top_k=args.top_k, embed_model=args.embed_model)
-            name = "Neural RAG (Embedding)"
-            cases[name] = neural
-            _print_case(name, neural)
-        except Exception as e:
-            print("=" * 90)
-            print("[Neural RAG (Embedding) FAILED]")
-            print(str(e))
-            print(
-                "If you are on Windows and see symlink-related errors, enable Developer Mode or run with symlink support, "
-                "or pre-download the embedding model and point --embed-model to a local path."
-            )
+        if args.mode in ("all", "baseline"):
+            baseline = make_companion().answer_baseline(query)
+            name = "Baseline (No RAG)"
+            cases[name] = baseline
+            _print_case(name, baseline)
 
-    _print_token_comparison(cases)
+        if args.mode in ("all", "tfidf"):
+            lexical = make_companion().answer_tfidf(query, top_k=args.top_k)
+            name = "Lexical RAG (TF-IDF)"
+            cases[name] = lexical
+            _print_case(name, lexical)
+
+        if args.mode in ("all", "embed"):
+            neu_companion = make_companion()
+            try:
+                neural = neu_companion.answer_embed(query, top_k=args.top_k, embed_model=args.embed_model)
+                name = "Neural RAG (Embedding)"
+                cases[name] = neural
+                _print_case(name, neural)
+            except Exception as e:
+                print("=" * 90)
+                print("[Neural RAG (Embedding) FAILED]")
+                print(str(e))
+                print(
+                    "If you are on Windows and see symlink-related errors, enable Developer Mode or run with symlink support, "
+                    "or pre-download the embedding model and point --embed-model to a local path."
+                )
+
+        _print_token_comparison(cases)
+        _print_quality_comparison(cases)
 
 
 if __name__ == "__main__":

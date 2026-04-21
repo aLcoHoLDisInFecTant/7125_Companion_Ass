@@ -72,6 +72,16 @@ python -m hkbu_study_companion.scripts.run_eval `
   --model gemma3:4b
 ```
 
+Run multiple representative queries from a JSON list:
+
+```powershell
+python -m hkbu_study_companion.scripts.run_eval `
+  --docs-json "$PWD\data\rag_knowledge_base.jsonl" `
+  --queries-json "$PWD\data\eval_queries.example.json" `
+  --mode all `
+  --model gemma3:4b
+```
+
 Single mode examples:
 
 ```powershell
@@ -127,3 +137,15 @@ UI highlights:
 - Embedding retrieval uses `sentence-transformers` and can use CUDA automatically
 - On Windows, embedding model downloads may require Developer Mode / symlink support
 - If embedding setup fails, use `tfidf` mode first to keep the pipeline running
+
+## 8) Minimum-Implementation Notebook
+
+Use the project-owned notebook:
+
+- `minimum_implementation_baseline.ipynb`
+
+This notebook is separate from the teacher template and demonstrates:
+- end-to-end baseline execution
+- baseline vs lexical RAG comparison
+- optional embedding comparison
+- token and quality-proxy outputs on representative queries
